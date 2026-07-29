@@ -24,3 +24,8 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
+
+# Local portfolio patch files
+portfolio-v*.zip
+PORTFOLIO-V*.md
+*.tsbuildinfo

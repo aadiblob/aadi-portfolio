@@ -5,12 +5,17 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
+export type WheelRenderMode = "cad" | "mesh" | "stress";
+
 type WheelModelProps = {
   src: string;
   label: string;
   className?: string;
   autoRotate?: boolean;
   modelScale?: number;
+  renderMode?: WheelRenderMode;
+  onReady?: () => void;
+  onError?: () => void;
 };
 
 export function WheelModel({
@@ -19,6 +24,9 @@ export function WheelModel({
   className = "",
   autoRotate = true,
   modelScale = 1,
+  renderMode = "cad",
+  onReady,
+  onError,
 }: WheelModelProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
@@ -40,7 +48,7 @@ export function WheelModel({
       alpha: true,
       powerPreference: "high-performance",
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
     renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -76,10 +84,24 @@ export function WheelModel({
     let frame = 0;
     let disposed = false;
 
-    const material = new THREE.MeshStandardMaterial({
+    const cadMaterial = new THREE.MeshStandardMaterial({
       color: new THREE.Color("#c8c8c3"),
       metalness: 0.78,
       roughness: 0.38,
+      side: THREE.DoubleSide,
+    });
+
+    const meshMaterial = new THREE.MeshBasicMaterial({
+      color: new THREE.Color("#d9d9d4"),
+      wireframe: true,
+      transparent: true,
+      opacity: 0.64,
+      side: THREE.DoubleSide,
+    });
+
+    const stressMaterial = new THREE.MeshBasicMaterial({
+      vertexColors: true,
+      side: THREE.DoubleSide,
     });
 
     const loader = new GLTFLoader();
@@ -90,11 +112,18 @@ export function WheelModel({
         model = gltf.scene;
 
         model.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            child.material = material;
-            child.castShadow = false;
-            child.receiveShadow = false;
+          if (!(child instanceof THREE.Mesh)) return;
+
+          if (renderMode === "cad") {
+            child.material = cadMaterial;
+          } else if (renderMode === "mesh") {
+            child.material = meshMaterial;
+          } else if (child.geometry.getAttribute("color")) {
+            child.material = stressMaterial;
           }
+
+          child.castShadow = false;
+          child.receiveShadow = false;
         });
 
         const box = new THREE.Box3().setFromObject(model);
@@ -105,7 +134,7 @@ export function WheelModel({
 
         const rotatedBox = new THREE.Box3().setFromObject(model);
         const size = rotatedBox.getSize(new THREE.Vector3());
-        const maxDimension = Math.max(size.x, size.y, size.z);
+        const maxDimension = Math.max(size.x, size.y, size.z) || 1;
         const targetDiameter = 1.03 * modelScale;
         model.scale.setScalar(targetDiameter / maxDimension);
 
@@ -113,10 +142,15 @@ export function WheelModel({
         controls.target.set(0, 0, 0);
         controls.update();
         setLoaded(true);
+        onReady?.();
       },
       undefined,
-      () => {
-        if (!disposed) setFailed(true);
+      (error) => {
+        console.error("Wheel model failed to load:", src, error);
+        if (!disposed) {
+          setFailed(true);
+          onError?.();
+        }
       },
     );
 
@@ -136,8 +170,10 @@ export function WheelModel({
     const observer = new ResizeObserver(resize);
     observer.observe(mount);
     resize();
+    requestAnimationFrame(resize);
 
     const animate = () => {
+      if (disposed) return;
       frame = requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
@@ -150,16 +186,16 @@ export function WheelModel({
       observer.disconnect();
       controls.dispose();
       renderer.domElement.removeEventListener("pointerdown", stopAutoRotate);
-      material.dispose();
+      cadMaterial.dispose();
+      meshMaterial.dispose();
+      stressMaterial.dispose();
       renderer.dispose();
       renderer.domElement.remove();
       model?.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.geometry?.dispose();
-        }
+        if (child instanceof THREE.Mesh) child.geometry?.dispose();
       });
     };
-  }, [src, autoRotate, modelScale]);
+  }, [src, autoRotate, modelScale, renderMode, onReady, onError]);
 
   return (
     <div className={`wheel-model ${className}`} ref={mountRef} role="img" aria-label={label}>

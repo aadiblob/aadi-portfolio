@@ -117,10 +117,10 @@ export function WheelCaseIntro() {
         </div>
       </div>
 
-      <div className="case-next">
-        <span>Next / Load case · mesh · stress field</span>
-        <span>Design system preview</span>
-      </div>
+      <a className="case-next case-next-link" href="#wheel-analysis">
+        <span>Continue / analysis sequence</span>
+        <span aria-hidden="true">↓</span>
+      </a>
     </section>
   );
 }

@@ -5,6 +5,7 @@ import { Navigation } from "@/components/Navigation";
 import { ScrollProgress } from "@/components/ScrollProgress";
 import { SelectedWork } from "@/components/SelectedWork";
 import { WheelCaseIntro } from "@/components/WheelCaseIntro";
+import { WheelAnalysisSequence } from "@/components/WheelAnalysisSequence";
 import { WheelSpotlight } from "@/components/WheelSpotlight";
 
 export default function Home() {
@@ -13,10 +14,11 @@ export default function Home() {
       <ScrollProgress />
       <Navigation />
       <Hero />
+      <AboutStrip />
       <SelectedWork />
       <WheelSpotlight />
       <WheelCaseIntro />
-      <AboutStrip />
+      <WheelAnalysisSequence />
       <ContactFooter />
     </main>
   );
