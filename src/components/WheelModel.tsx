@@ -132,8 +132,14 @@ export function WheelModel({
         model.rotation.x = Math.PI / 2;
         model.rotation.z = -0.08;
 
+        // Rotation can shift the world-space bounds on asymmetric wheel geometry.
+        // Recenter after the display rotation so every model remains visually centered.
         const rotatedBox = new THREE.Box3().setFromObject(model);
-        const size = rotatedBox.getSize(new THREE.Vector3());
+        const rotatedCenter = rotatedBox.getCenter(new THREE.Vector3());
+        model.position.sub(rotatedCenter);
+
+        const centeredBox = new THREE.Box3().setFromObject(model);
+        const size = centeredBox.getSize(new THREE.Vector3());
         const maxDimension = Math.max(size.x, size.y, size.z) || 1;
         const targetDiameter = 1.03 * modelScale;
         model.scale.setScalar(targetDiameter / maxDimension);

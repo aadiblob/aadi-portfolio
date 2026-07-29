@@ -12,7 +12,7 @@ export function WheelSpotlight() {
     offset: ["start end", "end start"],
   });
 
-  const modelY = useTransform(scrollYProgress, [0, 1], [80, -80]);
+  const modelY = useTransform(scrollYProgress, [0, 1], [34, -34]);
   const copyY = useTransform(scrollYProgress, [0, 1], [20, -30]);
 
   return (

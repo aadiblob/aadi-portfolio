@@ -215,8 +215,8 @@ button { font: inherit; color: inherit; }
 
 /* SELECTED WORK */
 .selected-work {
-  padding-top: clamp(8rem, 16vw, 16rem);
-  padding-bottom: clamp(8rem, 14vw, 14rem);
+  padding-top: clamp(3rem, 4vw, 4rem);
+  padding-bottom: clamp(6rem, 9vw, 9rem);
 }
 
 .selected-work-header,
@@ -275,7 +275,7 @@ button { font: inherit; color: inherit; }
 /* WHEEL HERO */
 .wheel-spotlight {
   position: relative;
-  min-height: 112svh;
+  min-height: clamp(38rem, 82svh, 50rem);
   overflow: hidden;
   border-top: 1px solid var(--line-soft);
   border-bottom: 1px solid var(--line-soft);
@@ -285,13 +285,13 @@ button { font: inherit; color: inherit; }
 }
 
 .wheel-spotlight-grid {
-  min-height: 108svh;
+  min-height: clamp(36rem, 78svh, 47rem);
   display: grid;
   grid-template-columns: minmax(18rem, .7fr) minmax(0, 1.3fr);
   align-items: center;
   gap: clamp(1rem, 4vw, 5rem);
-  padding-top: 6rem;
-  padding-bottom: 5rem;
+  padding-top: clamp(4.5rem, 7vh, 6rem);
+  padding-bottom: clamp(3rem, 5vh, 4rem);
 }
 
 .wheel-spotlight-copy { position: relative; z-index: 4; }
@@ -326,9 +326,9 @@ button { font: inherit; color: inherit; }
 
 .wheel-spotlight-model {
   position: relative;
-  min-height: min(82vh, 850px);
-  height: 72vw;
-  max-height: 850px;
+  min-height: min(55vh, 590px);
+  height: 52vw;
+  max-height: 620px;
 }
 
 .wheel-model {
@@ -644,13 +644,13 @@ button { font: inherit; color: inherit; }
   .hero h1 { font-size: clamp(3.35rem, 17vw, 5.8rem); line-height: .88; }
   .hero-footer { align-items: flex-start; }
 
-  .selected-work { padding-top: 8rem; padding-bottom: 8rem; }
+  .selected-work { padding-top: 3rem; padding-bottom: 5rem; }
   .project-index-row { grid-template-columns: 2rem minmax(0, 1fr) 1rem; gap: .6rem; }
   .project-index-title { font-size: 1.45rem; }
 
-  .wheel-spotlight { min-height: 100svh; }
-  .wheel-spotlight-grid { min-height: 100svh; }
-  .wheel-spotlight-model { min-height: 29rem; height: 60svh; margin-top: 0; }
+  .wheel-spotlight { min-height: 82svh; }
+  .wheel-spotlight-grid { min-height: 78svh; }
+  .wheel-spotlight-model { min-height: 25rem; height: 50svh; margin-top: 0; }
   .wheel-model { min-height: 26rem; }
   .model-interaction-hint { right: auto; left: 0; }
 

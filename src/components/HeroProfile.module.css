@@ -1,0 +1,179 @@
+.hero {
+  position: relative;
+  padding-top: clamp(8rem, 14vh, 11rem);
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+.construction {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.horizontalLine,
+.verticalLine {
+  position: absolute;
+  display: block;
+  background: var(--line-soft);
+}
+
+.horizontalLine {
+  top: 21rem;
+  right: 0;
+  width: 42%;
+  height: 1px;
+  transform-origin: right;
+}
+
+.verticalLine {
+  top: 7rem;
+  right: 19%;
+  width: 1px;
+  height: 30rem;
+  transform-origin: top;
+}
+
+.role,
+.label {
+  position: relative;
+  z-index: 4;
+  color: var(--muted);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.role { margin: 0; }
+
+.heroVisual {
+  position: relative;
+  min-height: clamp(31rem, 55vw, 48rem);
+  margin-top: clamp(2rem, 4vh, 3.5rem);
+}
+
+.name {
+  position: absolute;
+  z-index: 4;
+  top: 12%;
+  left: 0;
+  width: min(58%, 770px);
+  margin: 0;
+  font-size: clamp(4.4rem, 8.3vw, 9rem);
+  font-weight: 400;
+  line-height: 0.82;
+  letter-spacing: -0.065em;
+  text-transform: uppercase;
+}
+
+.name > span {
+  display: block;
+  overflow: hidden;
+  padding: 0.02em 0.08em 0.08em 0;
+}
+
+.name > span > span { display: block; }
+
+.photo {
+  position: absolute;
+  z-index: 2;
+  inset: 0 0 0 24%;
+  margin: 0;
+  overflow: hidden;
+  background: #101010;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,.2) 11%, #000 37%);
+  mask-image: linear-gradient(to right, transparent 0%, rgba(0,0,0,.2) 11%, #000 37%);
+}
+
+.photo img {
+  object-fit: cover;
+  object-position: 54% 52%;
+  filter: saturate(0.86) contrast(1.04) brightness(0.9);
+}
+
+.photo::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background:
+    linear-gradient(to left, rgba(0,0,0,.08), transparent 34%),
+    linear-gradient(to bottom, rgba(0,0,0,.08), transparent 45%, rgba(0,0,0,.23));
+}
+
+.photo figcaption {
+  position: absolute;
+  z-index: 2;
+  inset: auto 0 0 auto;
+  display: flex;
+  gap: 1.2rem;
+  padding: 0.9rem 1rem;
+  color: rgba(255,255,255,.66);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.personal {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.34fr) minmax(0, 1fr);
+  gap: clamp(2rem, 8vw, 9rem);
+  padding: clamp(3rem, 4.8vw, 4.5rem) 0 clamp(3.5rem, 5.5vw, 5rem);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.label { padding-top: 0.45rem; }
+
+.personal p {
+  max-width: 39ch;
+  margin: 0;
+  font-size: clamp(1.4rem, 2.15vw, 2.65rem);
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+}
+
+@media (max-width: 900px) {
+  .heroVisual { min-height: clamp(27rem, 66vw, 39rem); }
+  .name { top: 10%; width: 62%; font-size: clamp(4rem, 10vw, 7rem); }
+  .photo { left: 20%; }
+}
+
+@media (max-width: 760px) {
+  .horizontalLine { top: 18rem; width: 52%; }
+  .verticalLine { right: 10%; }
+  .heroVisual {
+    display: grid;
+    min-height: 0;
+    gap: 2rem;
+  }
+  .name {
+    position: relative;
+    top: auto;
+    width: 100%;
+    font-size: clamp(3.7rem, 14vw, 6.4rem);
+  }
+  .photo {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 83%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 83%, transparent 100%);
+  }
+  .photo img { object-position: 55% center; }
+  .personal { grid-template-columns: 1fr; gap: 1.4rem; }
+  .personal p { max-width: 36ch; }
+}
+
+@media (max-width: 560px) {
+  .hero { padding-top: 7rem; padding-bottom: 0; }
+  .heroVisual { margin-top: 2.25rem; }
+  .name { font-size: clamp(3.15rem, 16vw, 5.4rem); }
+  .photo { aspect-ratio: 1 / 1; }
+  .photo img { object-position: 56% center; }
+  .photo figcaption span:last-child { display: none; }
+  .personal { padding: 2.75rem 0 3.5rem; }
+  .personal p { font-size: clamp(1.45rem, 6.5vw, 2.1rem); }
+}
