@@ -1,10 +1,10 @@
 {
   "name": "aaditya-portfolio",
-  "version": "0.1.0",
+  "version": "3.1.2",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "NODE_OPTIONS=--max-old-space-size=2048 next build --webpack",
     "start": "next start",
     "lint": "eslint .",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
@@ -13,22 +13,20 @@
   },
   "dependencies": {
     "motion": "12.42.2",
-    "next": "^16.2.12",
+    "next": "16.2.12",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "three": "0.179.1"
   },
   "devDependencies": {
     "@opennextjs/cloudflare": "1.20.1",
-    "@tailwindcss/postcss": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "@types/three": "0.179.0",
     "eslint": "latest",
-    "eslint-config-next": "^16.2.12",
-    "tailwindcss": "latest",
+    "eslint-config-next": "16.2.12",
     "typescript": "^5.9.2",
-    "wrangler": "4.113.0"
+    "wrangler": "4.113.0",
+    "@types/three": "0.179.0"
   }
 }
