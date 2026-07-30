@@ -3,6 +3,7 @@ import { DesignPractice } from "@/components/DesignPractice";
 import { HeroProfile } from "@/components/HeroProfile";
 import { Navigation } from "@/components/Navigation";
 import { ScrollProgress } from "@/components/ScrollProgress";
+import { SuperchargerSpotlight } from "@/components/SuperchargerSpotlight";
 import { SelectedWork } from "@/components/SelectedWork";
 import { WheelSpotlight } from "@/components/WheelSpotlight";
 import { WheelUnifiedViewer } from "@/components/WheelUnifiedViewer";
@@ -17,6 +18,7 @@ export default function Home() {
       <SelectedWork />
       <WheelSpotlight />
       <WheelUnifiedViewer />
+      <SuperchargerSpotlight />
       <ContactFooter />
     </main>
   );

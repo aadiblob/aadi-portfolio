@@ -1,0 +1,274 @@
+.section {
+  position: relative;
+  min-height: clamp(42rem, 88svh, 56rem);
+  overflow: hidden;
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  background:
+    radial-gradient(circle at 68% 44%, rgba(255, 255, 255, 0.045), transparent 30rem),
+    #090909;
+}
+
+.grid {
+  min-height: clamp(40rem, 84svh, 53rem);
+  display: grid;
+  grid-template-columns: minmax(19rem, 0.72fr) minmax(0, 1.28fr);
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 5.5rem);
+  padding-top: clamp(5rem, 8vh, 7rem);
+  padding-bottom: clamp(6.5rem, 10vh, 8rem);
+  transition:
+    grid-template-columns 1.05s cubic-bezier(0.22, 1, 0.36, 1),
+    gap 1.05s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.gridExploded {
+  grid-template-columns: minmax(0, 0fr) minmax(0, 1fr);
+  gap: 0;
+}
+
+.copy {
+  position: relative;
+  z-index: 3;
+  min-width: 0;
+}
+
+.copyExploded {
+  pointer-events: none;
+}
+
+.copy h2 {
+  max-width: 9ch;
+  margin: 1.15rem 0 clamp(2.4rem, 5vh, 4.5rem);
+  font-size: clamp(2.8rem, 6vw, 7rem);
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+}
+
+.statement {
+  display: grid;
+  gap: 0.18rem;
+  font-size: clamp(1.15rem, 1.9vw, 2.05rem);
+  letter-spacing: -0.025em;
+}
+
+.summary {
+  max-width: 52ch;
+  margin: 1.6rem 0 0;
+  color: var(--muted);
+  font-size: clamp(0.88rem, 1vw, 1.05rem);
+  line-height: 1.65;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1.4rem;
+  margin-top: 1.8rem;
+  color: var(--muted);
+  font-size: 0.63rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.viewer {
+  position: relative;
+  height: min(62vw, 680px);
+  min-height: 34rem;
+  min-width: 0;
+  justify-self: stretch;
+  width: 100%;
+  transition:
+    width 1.05s cubic-bezier(0.22, 1, 0.36, 1),
+    justify-self 1.05s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.viewerExploded {
+  width: min(100%, 1120px);
+  justify-self: center;
+}
+
+.viewer :global(.supercharger-model) {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.viewer :global(.supercharger-model canvas) {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+  transform: translateX(11%);
+  transition: transform 1.05s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.section[data-exploded="true"] .viewer :global(.supercharger-model canvas) {
+  transform: translateX(0);
+}
+
+.viewer :global(.supercharger-model canvas:active) {
+  cursor: grabbing;
+}
+
+.viewer :global(.supercharger-status),
+.viewer :global(.supercharger-interaction-hint) {
+  position: absolute;
+  z-index: 3;
+  color: var(--dim);
+  font-size: 0.59rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.viewer :global(.supercharger-status) {
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+}
+
+.viewer :global(.supercharger-interaction-hint) {
+  left: 0;
+  bottom: 1rem;
+  transition: left 1.05s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.section[data-exploded="true"] .viewer :global(.supercharger-interaction-hint) {
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.actionBar {
+  position: absolute;
+  z-index: 8;
+  inset: auto 0 1rem;
+  display: flex;
+  justify-content: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+.explodeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2.4rem;
+  min-width: 11.5rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid #f4f4f0;
+  border-radius: 0;
+  background: #f4f4f0;
+  color: #090909;
+  font: inherit;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background-color 220ms ease,
+    color 220ms ease,
+    transform 220ms ease;
+}
+
+.explodeButton:hover,
+.explodeButton:focus-visible,
+.explodeButtonActive {
+  background: #090909;
+  color: #f4f4f0;
+}
+
+.explodeButton:hover {
+  transform: translateY(-2px);
+}
+
+.explodeButton:focus-visible {
+  outline: 1px solid #f4f4f0;
+  outline-offset: 4px;
+}
+
+.buttonMark {
+  font-size: 1rem;
+  line-height: 0.8;
+}
+
+@media (max-width: 900px) {
+  .section {
+    min-height: auto;
+  }
+
+  .grid,
+  .gridExploded {
+    min-height: auto;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    padding-top: 6rem;
+    padding-bottom: 8rem;
+  }
+
+  .copy h2 {
+    max-width: 12ch;
+    margin-bottom: 2rem;
+  }
+
+  .copyExploded {
+    display: none;
+  }
+
+  .summary {
+    max-width: 60ch;
+  }
+
+  .viewer,
+  .viewerExploded {
+    width: 100%;
+    height: 58svh;
+    min-height: 28rem;
+  }
+
+  .viewer :global(.supercharger-model canvas) {
+    transform: translateX(0);
+  }
+
+  .viewer :global(.supercharger-interaction-hint),
+  .section[data-exploded="true"] .viewer :global(.supercharger-interaction-hint) {
+    left: 0;
+    transform: none;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 600px) {
+  .grid,
+  .gridExploded {
+    padding-top: 5rem;
+    padding-bottom: 7rem;
+  }
+
+  .copy h2 {
+    font-size: clamp(2.6rem, 14vw, 4.6rem);
+  }
+
+  .viewer,
+  .viewerExploded {
+    height: 52svh;
+    min-height: 24rem;
+  }
+
+  .explodeButton {
+    min-width: 10.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grid,
+  .viewer,
+  .viewer :global(.supercharger-model canvas),
+  .explodeButton {
+    transition-duration: 0.01ms;
+  }
+}
