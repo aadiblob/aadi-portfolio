@@ -12,6 +12,7 @@ type SuperchargerModelProps = {
   autoRotate?: boolean;
   modelScale?: number;
   exploded?: boolean;
+  engaged?: boolean;
 };
 
 type MaterialRole = "housing" | "gold" | "accessory" | "drive" | "hardware";
@@ -24,12 +25,42 @@ type ExplosionPart = {
   end: number;
 };
 
+type SpinPart = {
+  pivot: THREE.Object3D;
+  baseQuaternion: THREE.Quaternion;
+  direction: 1 | -1;
+};
+
+type FadeMaterial = {
+  material: THREE.Material;
+  baseOpacity: number;
+  engagedOpacity: number;
+  transparent: boolean;
+  depthWrite: boolean;
+};
+
+type AirflowRuntime = {
+  lines: THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial>;
+  phases: Float32Array;
+  longitudinal: Float32Array;
+  jitter: Float32Array;
+  lanes: Int8Array;
+  time: number;
+};
+
 type ViewerRuntime = {
   camera: THREE.PerspectiveCamera;
   controls: OrbitControls;
   parts: ExplosionPart[];
+  spinParts: SpinPart[];
+  fadeMaterials: FadeMaterial[];
+  airflow: AirflowRuntime;
   explodeProgress: number;
   explodeTarget: number;
+  engageProgress: number;
+  engageTarget: number;
+  spinAngle: number;
+  spinVelocity: number;
   cameraGoal: THREE.Vector3;
   targetGoal: THREE.Vector3;
   cameraTransitioning: boolean;
@@ -42,10 +73,57 @@ type ExplosionConfig = {
   end: number;
 };
 
+type SpinConfig = {
+  index: number;
+  pivotSourceIndex: number;
+  direction: 1 | -1;
+};
+
+type FadeConfig = {
+  index: number;
+  opacity: number;
+};
+
 const ASSEMBLED_CAMERA = new THREE.Vector3(0, 0.96, 2.58);
 const EXPLODED_CAMERA = new THREE.Vector3(0.36, 1.22, 3.72);
 const ASSEMBLED_TARGET = new THREE.Vector3(0, 0, 0);
 const EXPLODED_TARGET = new THREE.Vector3(0.36, 0.22, 0.16);
+
+// Two unnamed, sub-5 mm Onshape export occurrences appear as floating fasteners
+// beside the timing gears when the assembly is exploded. They are not part of
+// the intended presentation, so hide them at the occurrence level.
+const HIDDEN_EXPORT_OCCURRENCE_INDEXES = [3, 19] as const;
+
+// Onshape exported the asymmetric lobes with bounding-box centers that are
+// slightly offset from their true shaft centerlines. Spinning each occurrence
+// around its own visual center makes the lobes orbit and visibly intersect.
+// Every occurrence below therefore gets an independent pivot located from the
+// matching cylindrical shaft, while keeping the original authored phase and
+// the existing exploded-view offsets intact.
+const SPIN_CONFIG: SpinConfig[] = [
+  { index: 1, pivotSourceIndex: 6, direction: 1 }, // rotor A
+  { index: 6, pivotSourceIndex: 6, direction: 1 }, // rotor shaft A
+  { index: 4, pivotSourceIndex: 6, direction: 1 }, // timing gear A
+  { index: 5, pivotSourceIndex: 6, direction: 1 }, // front coupling A
+  { index: 13, pivotSourceIndex: 16, direction: -1 }, // rotor B
+  { index: 16, pivotSourceIndex: 16, direction: -1 }, // rotor shaft B
+  { index: 20, pivotSourceIndex: 16, direction: -1 }, // timing gear B
+  // Exact GLB hierarchy check: occurrence 10 is the silver bolted guard/flange
+  // highlighted by the user. It is part of the stationary snout support and is
+  // intentionally excluded from the spin list. Occurrence 12 is the concentric
+  // drive-shaft / black pulley geometry, so only that occurrence rotates.
+  { index: 12, pivotSourceIndex: 12, direction: -1 }, // drive shaft + black pulley
+];
+
+// In the engaged assembled view, these outer structures fade so the moving
+// timing drive and rotor train remain visible without changing the source GLB.
+const ENGAGED_FADE_CONFIG: FadeConfig[] = [
+  { index: 9, opacity: 0.13 }, // front cover
+  { index: 15, opacity: 0.16 }, // timing-drive bracket
+  { index: 11, opacity: 0.14 }, // snout housing
+];
+
+const DISPLAY_ANGULAR_SPEED = 2.45;
 
 // These indexes match the 21 top-level Onshape occurrences in the uploaded GLB.
 // Offsets are expressed in the original Onshape assembly axes before the web-view
@@ -64,11 +142,11 @@ const EXPLOSION_CONFIG: ExplosionConfig[] = [
   { index: 9, offset: [0, 0.052, 0], start: 0.34, end: 0.64 }, // front plate
   { index: 8, offset: [0.004, 0.069, 0], start: 0.38, end: 0.68 },
   { index: 14, offset: [-0.004, 0.069, 0], start: 0.38, end: 0.68 },
-  { index: 15, offset: [0, 0.086, 0], start: 0.43, end: 0.72 }, // timing plate
+  // Preserve the original exploded presentation: the seal / timing plate
+  // separates first, followed by the two timing gears farther toward the snout.
+  { index: 15, offset: [0, 0.086, 0], start: 0.43, end: 0.72 }, // seal / timing plate
   { index: 4, offset: [0.011, 0.111, 0], start: 0.5, end: 0.78 }, // timing gear A
   { index: 20, offset: [-0.011, 0.111, 0], start: 0.5, end: 0.78 }, // timing gear B
-  { index: 3, offset: [0.011, 0.127, 0], start: 0.54, end: 0.81 },
-  { index: 19, offset: [-0.011, 0.127, 0], start: 0.54, end: 0.81 },
   { index: 5, offset: [0, 0.142, 0], start: 0.58, end: 0.84 },
   { index: 11, offset: [0, 0.169, 0], start: 0.62, end: 0.89 }, // snout housing
   { index: 17, offset: [0, 0.186, 0], start: 0.66, end: 0.92 },
@@ -153,15 +231,77 @@ function smoothStep(value: number): number {
   return clamped * clamped * (3 - 2 * clamped);
 }
 
-function buildExplosionParts(importedModel: THREE.Object3D): ExplosionPart[] {
+function getAssemblyRoot(importedModel: THREE.Object3D): THREE.Object3D | null {
   const namedRoot = importedModel.getObjectByName("Assembly 1");
-  const assemblyRoot =
-    namedRoot ?? importedModel.children.find((child) => child.children.length >= 20) ?? importedModel.children[0];
+  return (
+    namedRoot ??
+    importedModel.children.find((child) => child.children.length >= 20) ??
+    importedModel.children[0] ??
+    null
+  );
+}
 
-  if (!assemblyRoot) return [];
+function getOccurrences(importedModel: THREE.Object3D): {
+  assemblyRoot: THREE.Object3D;
+  occurrences: THREE.Object3D[];
+} | null {
+  const assemblyRoot = getAssemblyRoot(importedModel);
+  if (!assemblyRoot) return null;
+  return { assemblyRoot, occurrences: [...assemblyRoot.children] };
+}
 
+function hideExportArtifacts(occurrences: THREE.Object3D[]): void {
+  HIDDEN_EXPORT_OCCURRENCE_INDEXES.forEach((index) => {
+    const artifact = occurrences[index];
+    if (artifact) artifact.visible = false;
+  });
+}
+
+function buildSpinPivots(
+  assemblyRoot: THREE.Object3D,
+  occurrences: THREE.Object3D[],
+): { spinParts: SpinPart[]; motionTargets: Map<number, THREE.Object3D> } {
+  const spinParts: SpinPart[] = [];
+  const motionTargets = new Map<number, THREE.Object3D>();
+
+  assemblyRoot.updateWorldMatrix(true, true);
+
+  SPIN_CONFIG.forEach(({ index, pivotSourceIndex, direction }) => {
+    const occurrence = occurrences[index];
+    const pivotSource = occurrences[pivotSourceIndex];
+    if (!occurrence || !pivotSource) return;
+
+    // Only X/Z define the shaft centerline for rotation about original local Y;
+    // the Y coordinate can come from any point along the same cylindrical axis.
+    const shaftCenterWorld = new THREE.Box3()
+      .setFromObject(pivotSource)
+      .getCenter(new THREE.Vector3());
+    const shaftCenterLocal = assemblyRoot.worldToLocal(shaftCenterWorld.clone());
+
+    const pivot = new THREE.Group();
+    pivot.name = `supercharger-spin-pivot-${index}`;
+    pivot.position.copy(shaftCenterLocal);
+    assemblyRoot.add(pivot);
+    pivot.updateWorldMatrix(true, false);
+    pivot.attach(occurrence);
+
+    spinParts.push({
+      pivot,
+      baseQuaternion: pivot.quaternion.clone(),
+      direction,
+    });
+    motionTargets.set(index, pivot);
+  });
+
+  return { spinParts, motionTargets };
+}
+
+function buildExplosionParts(
+  occurrences: THREE.Object3D[],
+  motionTargets: Map<number, THREE.Object3D>,
+): ExplosionPart[] {
   return EXPLOSION_CONFIG.flatMap((config) => {
-    const object = assemblyRoot.children[config.index];
+    const object = motionTargets.get(config.index) ?? occurrences[config.index];
     if (!object) return [];
 
     return [
@@ -176,6 +316,108 @@ function buildExplosionParts(importedModel: THREE.Object3D): ExplosionPart[] {
   });
 }
 
+function buildFadeMaterials(occurrences: THREE.Object3D[]): FadeMaterial[] {
+  const fadeMaterials: FadeMaterial[] = [];
+  const seen = new Set<THREE.Material>();
+
+  ENGAGED_FADE_CONFIG.forEach(({ index, opacity }) => {
+    const occurrence = occurrences[index];
+    if (!occurrence) return;
+
+    occurrence.traverse((child) => {
+      if (!(child instanceof THREE.Mesh)) return;
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
+
+      materials.forEach((material) => {
+        if (seen.has(material)) return;
+        seen.add(material);
+        fadeMaterials.push({
+          material,
+          baseOpacity: material.opacity,
+          engagedOpacity: opacity,
+          transparent: material.transparent,
+          depthWrite: material.depthWrite,
+        });
+      });
+    });
+  });
+
+  return fadeMaterials;
+}
+
+function createAirflow(importedModel: THREE.Object3D): AirflowRuntime {
+  const streakCount = 88;
+  const positions = new Float32Array(streakCount * 6);
+  const phases = new Float32Array(streakCount);
+  const longitudinal = new Float32Array(streakCount);
+  const jitter = new Float32Array(streakCount);
+  const lanes = new Int8Array(streakCount);
+
+  // Deterministic pseudo-random distribution keeps the visual stable across loads.
+  let seed = 1847;
+  const random = () => {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  };
+
+  for (let index = 0; index < streakCount; index += 1) {
+    phases[index] = random();
+    longitudinal[index] = THREE.MathUtils.lerp(-0.052, 0.046, random());
+    jitter[index] = THREE.MathUtils.lerp(-0.0035, 0.0035, random());
+    lanes[index] = index % 2 === 0 ? -1 : 1;
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geometry.computeBoundingSphere();
+
+  const material = new THREE.LineBasicMaterial({
+    color: "#b7dce8",
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    depthTest: false,
+    blending: THREE.AdditiveBlending,
+  });
+
+  const lines = new THREE.LineSegments(geometry, material);
+  lines.name = "supercharger-airflow";
+  lines.frustumCulled = false;
+  lines.renderOrder = 8;
+  lines.visible = false;
+  importedModel.add(lines);
+
+  return { lines, phases, longitudinal, jitter, lanes, time: 0 };
+}
+
+function updateAirflow(airflow: AirflowRuntime, engagement: number, delta: number): void {
+  airflow.time += delta * 0.48;
+  const position = airflow.lines.geometry.getAttribute("position") as THREE.BufferAttribute;
+  const values = position.array as Float32Array;
+
+  for (let index = 0; index < airflow.phases.length; index += 1) {
+    const progress = (airflow.phases[index] + airflow.time) % 1;
+    const lane = airflow.lanes[index];
+    const sideSweep = 0.012 + 0.015 * Math.sin(Math.PI * progress);
+    const x = 0.029 + lane * sideSweep + airflow.jitter[index];
+    const y = airflow.longitudinal[index] + 0.003 * Math.sin(progress * Math.PI * 4);
+    const zHead = THREE.MathUtils.lerp(0.046, -0.052, progress);
+    const zTail = zHead + 0.0085;
+    const offset = index * 6;
+
+    values[offset] = x;
+    values[offset + 1] = y;
+    values[offset + 2] = zHead;
+    values[offset + 3] = x;
+    values[offset + 4] = y;
+    values[offset + 5] = zTail;
+  }
+
+  position.needsUpdate = true;
+  airflow.lines.material.opacity = 0.42 * engagement;
+  airflow.lines.visible = engagement > 0.012;
+}
+
 export function SuperchargerModel({
   src = "/models/supercharger.glb",
   label = "Interactive Roots supercharger assembly",
@@ -183,25 +425,40 @@ export function SuperchargerModel({
   autoRotate = true,
   modelScale = 1,
   exploded = false,
+  engaged = false,
 }: SuperchargerModelProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const runtimeRef = useRef<ViewerRuntime | null>(null);
   const explodedRef = useRef(exploded);
+  const engagedRef = useRef(engaged && !exploded);
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     explodedRef.current = exploded;
+    if (exploded) engagedRef.current = false;
+
     const runtime = runtimeRef.current;
     if (!runtime) return;
 
     runtime.explodeTarget = exploded ? 1 : 0;
+    if (exploded) runtime.engageTarget = 0;
     runtime.cameraGoal.copy(exploded ? EXPLODED_CAMERA : ASSEMBLED_CAMERA);
     runtime.targetGoal.copy(exploded ? EXPLODED_TARGET : ASSEMBLED_TARGET);
     runtime.cameraTransitioning = true;
     runtime.controls.autoRotate = false;
     runtime.controls.enabled = false;
   }, [exploded]);
+
+  useEffect(() => {
+    const shouldEngage = engaged && !exploded;
+    engagedRef.current = shouldEngage;
+    const runtime = runtimeRef.current;
+    if (!runtime) return;
+
+    runtime.engageTarget = shouldEngage ? 1 : 0;
+    if (shouldEngage) runtime.controls.autoRotate = false;
+  }, [engaged, exploded]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -252,7 +509,7 @@ export function SuperchargerModel({
     controls.maxPolarAngle = Math.PI * 0.68;
     controls.rotateSpeed = 0.42;
     controls.zoomSpeed = 0.72;
-    controls.autoRotate = autoRotate && !explodedRef.current;
+    controls.autoRotate = autoRotate && !explodedRef.current && !engagedRef.current;
     controls.autoRotateSpeed = 0.38;
     controls.target.copy(explodedRef.current ? EXPLODED_TARGET : ASSEMBLED_TARGET);
 
@@ -260,6 +517,8 @@ export function SuperchargerModel({
     let frame = 0;
     let disposed = false;
     const clock = new THREE.Clock();
+    const spinAxis = new THREE.Vector3(0, 1, 0);
+    const spinQuaternion = new THREE.Quaternion();
     const ownedMaterials = new Set<THREE.Material>();
 
     const loader = new GLTFLoader();
@@ -289,7 +548,17 @@ export function SuperchargerModel({
         });
 
         const importedModel = model;
-        const explosionParts = buildExplosionParts(importedModel);
+        const occurrenceData = getOccurrences(importedModel);
+        if (!occurrenceData) {
+          setFailed(true);
+          return;
+        }
+
+        const { assemblyRoot, occurrences } = occurrenceData;
+        hideExportArtifacts(occurrences);
+        const { spinParts, motionTargets } = buildSpinPivots(assemblyRoot, occurrences);
+        const explosionParts = buildExplosionParts(occurrences, motionTargets);
+        const fadeMaterials = buildFadeMaterials(occurrences);
         const rawBounds = new THREE.Box3().setFromObject(importedModel);
         const rawCenter = rawBounds.getCenter(new THREE.Vector3());
         importedModel.position.sub(rawCenter);
@@ -321,10 +590,25 @@ export function SuperchargerModel({
         presentationFrame.scale.setScalar(targetSize / maxDimension);
 
         const initialProgress = explodedRef.current ? 1 : 0;
+        const initialEngagement = engagedRef.current && !explodedRef.current ? 1 : 0;
         explosionParts.forEach((part) => {
           const localProgress = smoothStep((initialProgress - part.start) / (part.end - part.start));
           part.object.position.copy(part.basePosition).addScaledVector(part.offset, localProgress);
         });
+
+        fadeMaterials.forEach((entry) => {
+          entry.material.opacity = THREE.MathUtils.lerp(
+            entry.baseOpacity,
+            entry.engagedOpacity,
+            initialEngagement,
+          );
+          entry.material.transparent = initialEngagement > 0;
+          entry.material.depthWrite = initialEngagement === 0 ? entry.depthWrite : false;
+          entry.material.needsUpdate = true;
+        });
+
+        const airflow = createAirflow(importedModel);
+        updateAirflow(airflow, initialEngagement, 0);
 
         model = presentationFrame;
         scene.add(model);
@@ -335,8 +619,15 @@ export function SuperchargerModel({
           camera,
           controls,
           parts: explosionParts,
+          spinParts,
+          fadeMaterials,
+          airflow,
           explodeProgress: initialProgress,
           explodeTarget: initialProgress,
+          engageProgress: initialEngagement,
+          engageTarget: initialEngagement,
+          spinAngle: 0,
+          spinVelocity: initialEngagement * DISPLAY_ANGULAR_SPEED,
           cameraGoal: (explodedRef.current ? EXPLODED_CAMERA : ASSEMBLED_CAMERA).clone(),
           targetGoal: (explodedRef.current ? EXPLODED_TARGET : ASSEMBLED_TARGET).clone(),
           cameraTransitioning: false,
@@ -403,6 +694,47 @@ export function SuperchargerModel({
           part.object.position.copy(part.basePosition).addScaledVector(part.offset, localProgress);
         });
 
+        runtime.engageProgress = THREE.MathUtils.damp(
+          runtime.engageProgress,
+          runtime.engageTarget,
+          5.6,
+          delta,
+        );
+        runtime.spinVelocity = THREE.MathUtils.damp(
+          runtime.spinVelocity,
+          runtime.engageTarget * DISPLAY_ANGULAR_SPEED,
+          5.2,
+          delta,
+        );
+        runtime.spinAngle += runtime.spinVelocity * delta;
+
+        runtime.spinParts.forEach((part) => {
+          spinQuaternion.setFromAxisAngle(spinAxis, part.direction * runtime.spinAngle);
+          part.pivot.quaternion.copy(part.baseQuaternion).multiply(spinQuaternion);
+        });
+
+        runtime.fadeMaterials.forEach((entry) => {
+          const targetOpacity = THREE.MathUtils.lerp(
+            entry.baseOpacity,
+            entry.engagedOpacity,
+            runtime.engageProgress,
+          );
+          entry.material.opacity = targetOpacity;
+
+          const shouldBeTransparent = runtime.engageProgress > 0.004;
+          const shouldWriteDepth = shouldBeTransparent ? false : entry.depthWrite;
+          if (
+            entry.material.transparent !== shouldBeTransparent ||
+            entry.material.depthWrite !== shouldWriteDepth
+          ) {
+            entry.material.transparent = shouldBeTransparent;
+            entry.material.depthWrite = shouldWriteDepth;
+            entry.material.needsUpdate = true;
+          }
+        });
+
+        updateAirflow(runtime.airflow, runtime.engageProgress, delta);
+
         if (runtime.cameraTransitioning) {
           const cameraAlpha = 1 - Math.exp(-4.8 * delta);
           camera.position.lerp(runtime.cameraGoal, cameraAlpha);
@@ -434,6 +766,9 @@ export function SuperchargerModel({
       controls.dispose();
       renderer.domElement.removeEventListener("pointerdown", stopAutoRotate);
       renderer.domElement.removeEventListener("dblclick", resetView);
+      const runtime = runtimeRef.current;
+      runtime?.airflow.lines.geometry.dispose();
+      runtime?.airflow.lines.material.dispose();
       ownedMaterials.forEach((material) => material.dispose());
       renderer.dispose();
       renderer.domElement.remove();
@@ -456,7 +791,9 @@ export function SuperchargerModel({
       <span className="supercharger-interaction-hint">
         {exploded
           ? "Drag to inspect · Scroll to zoom · Double-click to reset"
-          : "Drag to rotate · Scroll to zoom · Double-click to reset"}
+          : engaged
+            ? "Engaged · Synchronized rotor drive · Drag to inspect"
+            : "Drag to rotate · Scroll to zoom · Double-click to reset"}
       </span>
     </div>
   );

@@ -36,11 +36,19 @@ const ITERATIONS = {
   },
 } as const;
 
-const DESCRIPTIONS: Record<ViewMode, string> = {
-  CAD: "Inspect the clean wheel geometry without simulation overlays.",
-  LOAD: "A bearing load is applied on the wheel mounting face using the same setup for both iterations.",
-  MESH: "The spokes and refined geometry around the hub use an element size of 5, while the barrel uses an element size of 100.",
-  STRESS: "Maximum principal stress is shown from the exported ANSYS vertex-color field.",
+const DESCRIPTIONS: Record<Iteration, Record<ViewMode, string>> = {
+  V1: {
+    CAD: "V1 began as a clean-sheet Onshape model: a simple six-spoke wheel sized to 19 × 9.5 in, a common sports-car envelope. At 22.87 lb, the baseline landed close to the roughly 21.2 lb Volk TE37 reference, giving the optimization a realistic starting point while preserving the proportions and silhouette I wanted.",
+    LOAD: "The rear mounting face is fixed while a 1000 N bearing load acts on the inner cylindrical barrel in the model's Y direction. The same boundary conditions are used for V1 and V3.",
+    MESH: "The spokes and refined geometry around the hub use an element size of 5, while the barrel uses an element size of 100.",
+    STRESS: "Maximum principal stress is shown from the exported ANSYS vertex-color field.",
+  },
+  V3: {
+    CAD: "Inspect the revised six-spoke geometry after the mass-removal and fillet changes, without simulation overlays.",
+    LOAD: "The rear mounting face is fixed while a 1000 N bearing load acts on the inner cylindrical barrel in the model's Y direction. The same boundary conditions are used for V1 and V3.",
+    MESH: "The spokes and refined geometry around the hub use an element size of 5, while the barrel uses an element size of 100.",
+    STRESS: "Maximum principal stress is shown from the exported ANSYS vertex-color field.",
+  },
 };
 
 function getRenderMode(view: ViewMode): WheelRenderMode {
@@ -150,8 +158,8 @@ export function WheelUnifiedViewer() {
             <div className={styles.loadOverlay} aria-hidden="true">
               <span className={styles.constraintRing} />
               <span className={styles.loadArrow} />
-              <span className={styles.loadText}>Bearing load</span>
-              <span className={styles.constraintText}>Mounting face</span>
+              <span className={styles.loadText}>1000 N bearing load · Y · barrel</span>
+              <span className={styles.constraintText}>Fixed support · mounting face</span>
             </div>
           )}
 
@@ -174,7 +182,7 @@ export function WheelUnifiedViewer() {
         <aside className={styles.data}>
           <div className={styles.modeCopy}>
             <span>{VIEWS[viewIndex].label}</span>
-            <p>{DESCRIPTIONS[view]}</p>
+            <p>{DESCRIPTIONS[iteration][view]}</p>
           </div>
 
           <div className={styles.primaryMetric}>

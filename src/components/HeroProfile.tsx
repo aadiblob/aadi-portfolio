@@ -68,6 +68,7 @@ export function HeroProfile() {
             alt="Aaditya sitting on the Angels Landing ridge in Zion National Park"
             fill
             priority
+            unoptimized
             sizes="(max-width: 760px) 100vw, 72vw"
           />
           <figcaption>

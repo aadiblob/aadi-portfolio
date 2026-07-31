@@ -9,6 +9,7 @@ export function SuperchargerSpotlight() {
   const sectionRef = useRef<HTMLElement>(null);
   const reduceMotion = useReducedMotion();
   const [exploded, setExploded] = useState(false);
+  const [engaged, setEngaged] = useState(false);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ["start end", "end start"],
@@ -16,6 +17,16 @@ export function SuperchargerSpotlight() {
 
   const modelY = useTransform(scrollYProgress, [0, 1], [28, -28]);
   const copyY = useTransform(scrollYProgress, [0, 1], [18, -24]);
+
+  const toggleExploded = () => {
+    if (!exploded) setEngaged(false);
+    setExploded((current) => !current);
+  };
+
+  const toggleEngaged = () => {
+    if (exploded) return;
+    setEngaged((current) => !current);
+  };
 
   return (
     <section
@@ -61,22 +72,36 @@ export function SuperchargerSpotlight() {
           animate={{ scale: exploded && !reduceMotion ? 1.04 : 1 }}
           transition={{ duration: reduceMotion ? 0.01 : 1.05, ease: [0.22, 1, 0.36, 1] }}
         >
-          <SuperchargerModel exploded={exploded} modelScale={1.05} />
-        </motion.div>
-      </div>
+          <SuperchargerModel exploded={exploded} engaged={engaged} modelScale={1.05} />
 
-      <div className={`${styles.actionBar} section-shell`}>
-        <button
-          type="button"
-          className={`${styles.explodeButton} ${exploded ? styles.explodeButtonActive : ""}`}
-          aria-pressed={exploded}
-          onClick={() => setExploded((current) => !current)}
-        >
-          <span>{exploded ? "Assemble" : "Explode"}</span>
-          <span className={styles.buttonMark} aria-hidden="true">
-            {exploded ? "−" : "+"}
-          </span>
-        </button>
+          <div className={styles.actionBar}>
+            <button
+              type="button"
+              className={`${styles.explodeButton} ${exploded ? styles.explodeButtonActive : ""}`}
+              aria-pressed={exploded}
+              onClick={toggleExploded}
+            >
+              <span>{exploded ? "Assemble" : "Explode"}</span>
+              <span className={styles.buttonMark} aria-hidden="true">
+                {exploded ? "−" : "+"}
+              </span>
+            </button>
+
+            {!exploded && (
+              <button
+                type="button"
+                className={`${styles.engageButton} ${engaged ? styles.engageButtonActive : ""}`}
+                aria-pressed={engaged}
+                onClick={toggleEngaged}
+              >
+                <span>{engaged ? "Stop" : "Engage"}</span>
+                <span className={styles.buttonMark} aria-hidden="true">
+                  {engaged ? "■" : "▶"}
+                </span>
+              </button>
+            )}
+          </div>
+        </motion.div>
       </div>
     </section>
   );
