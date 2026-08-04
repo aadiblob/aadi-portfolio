@@ -62,7 +62,7 @@ export function SelectedWork() {
           <motion.a
             key={project.number}
             className="project-index-row"
-            href={index === 0 ? "#wheel" : index === 1 ? "#supercharger" : "#contact"}
+            href={index === 0 ? "#wheel" : index === 1 ? "#supercharger" : "#aircraft-cfd"}
             variants={rowVariants}
           >
             <span className="project-index-number">{project.number}</span>
