@@ -101,18 +101,18 @@ const HIDDEN_EXPORT_OCCURRENCE_INDEXES = [3, 19] as const;
 // matching cylindrical shaft, while keeping the original authored phase and
 // the existing exploded-view offsets intact.
 const SPIN_CONFIG: SpinConfig[] = [
-  { index: 1, pivotSourceIndex: 6, direction: 1 }, // rotor A
-  { index: 6, pivotSourceIndex: 6, direction: 1 }, // rotor shaft A
-  { index: 4, pivotSourceIndex: 6, direction: 1 }, // timing gear A
-  { index: 5, pivotSourceIndex: 6, direction: 1 }, // front coupling A
-  { index: 13, pivotSourceIndex: 16, direction: -1 }, // rotor B
-  { index: 16, pivotSourceIndex: 16, direction: -1 }, // rotor shaft B
-  { index: 20, pivotSourceIndex: 16, direction: -1 }, // timing gear B
+  { index: 1, pivotSourceIndex: 6, direction: -1 }, // rotor A
+  { index: 6, pivotSourceIndex: 6, direction: -1 }, // rotor shaft A
+  { index: 4, pivotSourceIndex: 6, direction: -1 }, // timing gear A
+  { index: 5, pivotSourceIndex: 6, direction: -1 }, // front coupling A
+  { index: 13, pivotSourceIndex: 16, direction: 1 }, // rotor B
+  { index: 16, pivotSourceIndex: 16, direction: 1 }, // rotor shaft B
+  { index: 20, pivotSourceIndex: 16, direction: 1 }, // timing gear B
   // Exact GLB hierarchy check: occurrence 10 is the silver bolted guard/flange
   // highlighted by the user. It is part of the stationary snout support and is
   // intentionally excluded from the spin list. Occurrence 12 is the concentric
   // drive-shaft / black pulley geometry, so only that occurrence rotates.
-  { index: 12, pivotSourceIndex: 12, direction: -1 }, // drive shaft + black pulley
+  { index: 12, pivotSourceIndex: 12, direction: 1 }, // drive shaft + black pulley
 ];
 
 // In the engaged assembled view, these outer structures fade so the moving
