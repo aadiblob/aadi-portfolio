@@ -72,9 +72,19 @@ button { font: inherit; color: inherit; }
 }
 
 .nav-name {
-  font-size: .72rem;
-  letter-spacing: .11em;
-  text-transform: uppercase;
+  position: relative;
+  flex: 0 0 135px;
+  width: 135px;
+  height: .72rem;
+}
+
+.nav-name img {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 135px;
+  height: auto;
+  transform: translateY(-22%);
 }
 
 .site-nav nav {
@@ -83,8 +93,13 @@ button { font: inherit; color: inherit; }
   gap: clamp(1rem, 2.4vw, 2.7rem);
 }
 
-.site-nav nav a {
+.site-nav nav a,
+.site-nav nav button {
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--muted);
+  cursor: pointer;
   font-size: .67rem;
   letter-spacing: .13em;
   text-transform: uppercase;
@@ -92,7 +107,136 @@ button { font: inherit; color: inherit; }
 }
 
 .site-nav nav a:hover,
-.site-nav nav a:focus-visible { color: var(--text); }
+.site-nav nav a:focus-visible,
+.site-nav nav button:hover,
+.site-nav nav button:focus-visible { color: var(--text); }
+
+/* CONTACT MODAL */
+.contact-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  padding: var(--page-pad);
+  background: rgba(0, 0, 0, .72);
+  backdrop-filter: blur(10px);
+  animation: contact-backdrop-in 220ms ease-out both;
+}
+
+.contact-modal {
+  position: relative;
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr);
+  gap: clamp(1.8rem, 4vw, 4rem);
+  width: min(100%, 760px);
+  padding: clamp(2rem, 5vw, 4.5rem);
+  border-block: 1px solid var(--line);
+  background: rgba(8, 8, 8, .96);
+  box-shadow: 0 2rem 8rem rgba(0, 0, 0, .55);
+  animation: contact-modal-in 260ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.contact-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: .35rem;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: .6rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  transition: color 180ms ease;
+}
+
+.contact-modal-close:hover,
+.contact-modal-close:focus-visible { color: var(--text); }
+
+.contact-modal-headshot {
+  position: relative;
+  width: 148px;
+  aspect-ratio: 4 / 5;
+  align-self: center;
+  overflow: hidden;
+  background: var(--bg-soft);
+}
+
+.contact-modal-headshot img {
+  object-fit: cover;
+  object-position: center 30%;
+  filter: saturate(.8) contrast(1.04);
+}
+
+.contact-modal-content { min-width: 0; }
+
+.contact-modal-eyebrow {
+  color: var(--dim);
+  font-size: .6rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.contact-modal-content h2 {
+  margin: .8rem 0 .55rem;
+  font-size: clamp(2rem, 5vw, 3.7rem);
+  font-weight: 400;
+  letter-spacing: -.045em;
+  line-height: .95;
+}
+
+.contact-modal-content p {
+  max-width: 30rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: .72rem;
+  letter-spacing: .08em;
+  line-height: 1.6;
+  text-transform: uppercase;
+}
+
+.contact-modal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .7rem 1.4rem;
+  margin-top: 2rem;
+}
+
+.contact-modal-links a,
+.contact-modal-resume {
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: .67rem;
+  letter-spacing: .09em;
+  line-height: 1.8;
+  transition: color 180ms ease, border-color 180ms ease;
+}
+
+.contact-modal-links a:hover,
+.contact-modal-links a:focus-visible,
+.contact-modal-resume:hover,
+.contact-modal-resume:focus-visible {
+  border-color: var(--text);
+  color: var(--text);
+}
+
+.contact-modal-resume {
+  display: inline-block;
+  margin-top: 2.2rem;
+  color: var(--text);
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+@keyframes contact-backdrop-in {
+  from { opacity: 0; }
+}
+
+@keyframes contact-modal-in {
+  from { opacity: 0; transform: translateY(12px); }
+}
 
 /* HERO */
 .hero {
@@ -591,7 +735,6 @@ button { font: inherit; color: inherit; }
 .minimal-footer-links a:hover { color: var(--text); }
 
 @media (max-width: 900px) {
-  .site-nav nav a:nth-child(2) { display: none; }
   .construction-line-y { right: 12%; }
   .construction-node { right: calc(12% - 2px); }
 
@@ -635,8 +778,23 @@ button { font: inherit; color: inherit; }
 
   .site-nav { padding-top: 1rem; padding-bottom: 1rem; }
   .site-nav nav { gap: .85rem; }
-  .site-nav nav a { font-size: .57rem; }
-  .nav-name { font-size: .61rem; }
+  .site-nav nav a,
+  .site-nav nav button { font-size: .57rem; }
+  .nav-name { flex-basis: 105px; width: 105px; }
+  .nav-name img { width: 105px; }
+
+  .contact-modal-backdrop { padding: 1rem; }
+  .contact-modal {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    max-height: calc(100svh - 2rem);
+    padding: 3.25rem 1.25rem 2rem;
+    overflow-y: auto;
+  }
+  .contact-modal-headshot { width: 112px; }
+  .contact-modal-content h2 { font-size: 2.4rem; }
+  .contact-modal-links { margin-top: 1.4rem; }
+  .contact-modal-resume { margin-top: 1.7rem; }
 
   .hero { padding-top: 8rem; }
   .hero-role { max-width: 20rem; }
