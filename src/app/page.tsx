@@ -1,4 +1,5 @@
 import { AircraftCFDSection } from "@/components/AircraftCFDSection";
+import { BedFrameSection } from "@/components/BedFrameSection";
 import { ContactFooter } from "@/components/ContactFooter";
 import { DesignPractice } from "@/components/DesignPractice";
 import { HeroProfile } from "@/components/HeroProfile";
@@ -21,6 +22,7 @@ export default function Home() {
       <WheelUnifiedViewer />
       <SuperchargerSpotlight />
       <AircraftCFDSection />
+      <BedFrameSection />
       <ContactFooter />
     </main>
   );
