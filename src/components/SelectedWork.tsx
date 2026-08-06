@@ -7,6 +7,7 @@ const projects = [
   { number: "01", title: "Wheel Structural Optimization", meta: "ANSYS · Onshape · FEA" },
   { number: "02", title: "Roots Supercharger", meta: "CAD · Assembly · CFD" },
   { number: "03", title: "Subsonic Aircraft CFD", meta: "Fluent · Aerodynamics · MATLAB" },
+  { number: "04", title: "Japanese Joinery Modular Bedframe", meta: "Product design · Design for disassembly" },
 ];
 
 const containerVariants = {
@@ -62,7 +63,7 @@ export function SelectedWork() {
           <motion.a
             key={project.number}
             className="project-index-row"
-            href={index === 0 ? "#wheel" : index === 1 ? "#supercharger" : "#aircraft-cfd"}
+            href={index === 0 ? "#wheel" : index === 1 ? "#supercharger" : index === 2 ? "#aircraft-cfd" : "#bed-frame"}
             variants={rowVariants}
           >
             <span className="project-index-number">{project.number}</span>
